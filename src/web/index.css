@@ -1,1 +1,129 @@
 @import "tailwindcss";
+
+@theme {
+  --color-surface: #0c0e12;
+  --color-surface-raised: #141720;
+  --color-surface-overlay: #1a1e2a;
+  --color-surface-hover: #1f2436;
+  --color-border: #262b3a;
+  --color-border-bright: #363d52;
+  --color-text-primary: #e8eaf0;
+  --color-text-secondary: #8890a4;
+  --color-text-muted: #555d74;
+
+  --color-state-blocked: #555d74;
+  --color-state-blocked-bg: #1a1c24;
+  --color-state-ready: #3b82f6;
+  --color-state-ready-bg: #131a2e;
+  --color-state-progress: #f59e0b;
+  --color-state-progress-bg: #1e1a10;
+  --color-state-qa: #a855f7;
+  --color-state-qa-bg: #1a132e;
+  --color-state-complete: #22c55e;
+  --color-state-complete-bg: #0f1e16;
+
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-danger: #ef4444;
+  --color-danger-hover: #f87171;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FPpRFWJb-pHA.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FPpRFWJb-pHA.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FPpRFWJb-pHA.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/dmsans/v14/rP2tp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/dmsans/v14/rP2tp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/dmsans/v14/rP2tp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2');
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-bright);
+}
+
+/* DAG canvas */
+.dag-node {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dag-node:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* Pulse animation for running agents */
+@keyframes agent-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.agent-running {
+  animation: agent-pulse 1.5s ease-in-out infinite;
+}
+
+/* State indicator bar */
+.state-bar {
+  width: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}

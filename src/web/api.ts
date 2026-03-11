@@ -15,6 +15,20 @@ export interface Ticket {
   updatedAt: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  repoPath: string;
+  mainBranch: string;
+  maxConcurrentAgents: number;
+  createdAt: string;
+}
+
+export interface DagData {
+  nodes: Array<{ id: string; title: string; state: string; dependencies: string[] }>;
+  edges: Array<{ from: string; to: string }>;
+}
+
 export async function fetchTickets(): Promise<Ticket[]> {
   const res = await fetch(`${BASE}/tickets`);
   return res.json();
@@ -77,10 +91,17 @@ export async function fetchActiveAgents(): Promise<{ activeAgents: string[] }> {
   return res.json();
 }
 
-export async function fetchDagStructure(): Promise<{
-  nodes: Array<{ id: string; title: string; state: string; dependencies: string[] }>;
-  edges: Array<{ from: string; to: string }>;
-}> {
+export async function fetchDagStructure(): Promise<DagData> {
   const res = await fetch(`${BASE}/tickets/dag/structure`);
+  return res.json();
+}
+
+export async function fetchProjects(): Promise<Project[]> {
+  const res = await fetch(`${BASE}/projects`);
+  return res.json();
+}
+
+export async function fetchCurrentProject(): Promise<{ id: string }> {
+  const res = await fetch(`${BASE}/project`);
   return res.json();
 }

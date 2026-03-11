@@ -1,15 +1,26 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createNodeWebSocket } from '@hono/node-ws';
-import { serveStatic } from '@hono/node-server/serve-static';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import { ticketRoutes } from './routes/tickets.js';
 import { addClient, removeClient, broadcastEvent } from './ws.js';
-import { setBroadcast } from '../core/store.js';
+import { setBroadcast, getAllProjects } from '../core/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const webDir = path.join(__dirname, '..', 'web');
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+};
 
 export function createServer(db: Database.Database, getProjectId: () => string) {
   const app = new Hono();
@@ -31,15 +42,38 @@ export function createServer(db: Database.Database, getProjectId: () => string) 
   // API routes
   app.route('/api/tickets', ticketRoutes(db, getProjectId, broadcastEvent));
 
+  // Projects API
+  app.get('/api/projects', (c) => {
+    const projects = getAllProjects(db);
+    return c.json(projects);
+  });
+
+  app.get('/api/project', (c) => {
+    return c.json({ id: getProjectId() });
+  });
+
   // Health check
   app.get('/api/health', (c) => c.json({ ok: true }));
 
   // Serve built React frontend
-  const webDir = path.join(__dirname, 'web');
-  app.use('/*', serveStatic({ root: webDir }));
+  app.get('/*', (c) => {
+    let reqPath = c.req.path;
+    let filePath = path.join(webDir, reqPath);
 
-  // SPA fallback
-  app.get('*', serveStatic({ root: webDir, path: '/index.html' }));
+    // If no file found, serve index.html (SPA fallback)
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(webDir, 'index.html');
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return c.text('Not Found', 404);
+    }
+
+    const ext = path.extname(filePath);
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const body = fs.readFileSync(filePath);
+    return new Response(body, { headers: { 'Content-Type': contentType } });
+  });
 
   return { app, injectWebSocket };
 }
@@ -53,6 +87,7 @@ export function startServer(
 
   const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`Rogue server running at http://localhost:${info.port}`);
+    console.log(`Serving web UI from ${webDir}`);
   });
 
   injectWebSocket(server);

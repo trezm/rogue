@@ -16,7 +16,7 @@ function broadcast(event: Record<string, any>): void {
 // --- Project ---
 
 export function getProject(db: Database.Database, id: string): Project | null {
-  const row = db.prepare('SELECT * FROM project WHERE id = ?').get(id) as any;
+  const row = db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as any;
   if (!row) return null;
   return {
     id: row.id,
@@ -26,18 +26,32 @@ export function getProject(db: Database.Database, id: string): Project | null {
     defaultQARequirements: JSON.parse(row.default_qa_requirements),
     maxConcurrentAgents: row.max_concurrent_agents,
     createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    updatedAt: row.created_at,
   };
+}
+
+export function getAllProjects(db: Database.Database): Project[] {
+  const rows = db.prepare('SELECT * FROM projects ORDER BY created_at DESC').all() as any[];
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    repoPath: row.repo_path,
+    mainBranch: row.main_branch,
+    defaultQARequirements: JSON.parse(row.default_qa_requirements),
+    maxConcurrentAgents: row.max_concurrent_agents,
+    createdAt: row.created_at,
+    updatedAt: row.created_at,
+  }));
 }
 
 export function insertProject(db: Database.Database, project: Project): void {
   db.prepare(`
-    INSERT INTO project (id, name, repo_path, main_branch, default_qa_requirements, max_concurrent_agents, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO projects (id, name, repo_path, main_branch, default_qa_requirements, max_concurrent_agents, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
     project.id, project.name, project.repoPath, project.mainBranch,
     JSON.stringify(project.defaultQARequirements), project.maxConcurrentAgents,
-    project.createdAt, project.updatedAt,
+    project.createdAt,
   );
 }
 
@@ -47,7 +61,7 @@ export function resolveProject(db: Database.Database, projectId?: string): Proje
     if (!p) throw new Error(`Project "${projectId}" not found`);
     return p;
   }
-  const row = db.prepare('SELECT * FROM project ORDER BY created_at DESC LIMIT 1').get() as any;
+  const row = db.prepare('SELECT * FROM projects ORDER BY created_at DESC LIMIT 1').get() as any;
   if (!row) throw new Error('No project found. Run "rogue init" first.');
   return {
     id: row.id,
@@ -64,9 +78,9 @@ export function resolveProject(db: Database.Database, projectId?: string): Proje
 // --- Tickets ---
 
 function rowToTicket(db: Database.Database, row: any): Ticket {
-  const deps = db.prepare('SELECT depends_on FROM ticket_dependencies WHERE ticket_id = ?')
+  const deps = db.prepare('SELECT depends_on_id FROM ticket_dependencies WHERE ticket_id = ?')
     .all(row.id)
-    .map((d: any) => d.depends_on);
+    .map((d: any) => d.depends_on_id);
 
   const logRows = db.prepare('SELECT * FROM log_entries WHERE ticket_id = ? ORDER BY id')
     .all(row.id) as any[];
@@ -129,7 +143,7 @@ export function insertTicket(db: Database.Database, ticket: Ticket): void {
     ticket.createdAt, ticket.updatedAt,
   );
 
-  const insertDep = db.prepare('INSERT INTO ticket_dependencies (ticket_id, depends_on) VALUES (?, ?)');
+  const insertDep = db.prepare('INSERT INTO ticket_dependencies (ticket_id, depends_on_id) VALUES (?, ?)');
   for (const dep of ticket.dependencies) {
     insertDep.run(ticket.id, dep);
   }
@@ -185,7 +199,7 @@ export function addLogEntry(db: Database.Database, ticketId: string, entry: LogE
 
 export function updateDependencies(db: Database.Database, ticketId: string, dependencies: string[]): void {
   db.prepare('DELETE FROM ticket_dependencies WHERE ticket_id = ?').run(ticketId);
-  const insertDep = db.prepare('INSERT INTO ticket_dependencies (ticket_id, depends_on) VALUES (?, ?)');
+  const insertDep = db.prepare('INSERT INTO ticket_dependencies (ticket_id, depends_on_id) VALUES (?, ?)');
   for (const dep of dependencies) {
     insertDep.run(ticketId, dep);
   }

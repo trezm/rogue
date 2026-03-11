@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchTickets, fetchTicket, createTicket, runTicketAgent, qaAction, addComment, resetTicket, runAll, fetchActiveAgents } from '../api';
+import {
+  fetchTickets, fetchTicket, createTicket, runTicketAgent,
+  qaAction, addComment, resetTicket, runAll, fetchActiveAgents,
+  fetchDagStructure, fetchProjects, fetchCurrentProject,
+} from '../api';
 
 export function useTickets() {
   return useQuery({ queryKey: ['tickets'], queryFn: fetchTickets, refetchInterval: 5000 });
@@ -11,6 +15,18 @@ export function useTicket(id: string) {
 
 export function useActiveAgents() {
   return useQuery({ queryKey: ['active-agents'], queryFn: fetchActiveAgents, refetchInterval: 3000 });
+}
+
+export function useDagStructure() {
+  return useQuery({ queryKey: ['dag'], queryFn: fetchDagStructure, refetchInterval: 5000 });
+}
+
+export function useProjects() {
+  return useQuery({ queryKey: ['projects'], queryFn: fetchProjects });
+}
+
+export function useCurrentProject() {
+  return useQuery({ queryKey: ['current-project'], queryFn: fetchCurrentProject });
 }
 
 export function useCreateTicket() {

@@ -28,39 +28,36 @@ export function setRogueHome(dir: string): void {
 
 function initSchema(db: Database.Database): void {
   db.exec(`
-    CREATE TABLE IF NOT EXISTS project (
+    CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      repo_path TEXT NOT NULL,
+      repo_path TEXT NOT NULL UNIQUE,
       main_branch TEXT NOT NULL DEFAULT 'main',
       default_qa_requirements TEXT NOT NULL DEFAULT '["human_review"]',
-      max_concurrent_agents INTEGER NOT NULL DEFAULT 2,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      max_concurrent_agents INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
 
     CREATE TABLE IF NOT EXISTS tickets (
       id TEXT PRIMARY KEY,
-      project_id TEXT NOT NULL,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
-      state TEXT NOT NULL DEFAULT 'blocked',
-      worktree_path TEXT,
-      branch_name TEXT,
-      qa_requirements TEXT NOT NULL DEFAULT '[]',
+      state TEXT NOT NULL DEFAULT 'blocked'
+        CHECK (state IN ('blocked', 'ready', 'in_progress', 'qa', 'complete')),
+      qa_requirements TEXT NOT NULL DEFAULT '["human_review"]',
       qa_agent_approved INTEGER NOT NULL DEFAULT 0,
       qa_human_approved INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      FOREIGN KEY (project_id) REFERENCES project(id)
+      worktree_path TEXT,
+      branch_name TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
 
     CREATE TABLE IF NOT EXISTS ticket_dependencies (
-      ticket_id TEXT NOT NULL,
-      depends_on TEXT NOT NULL,
-      PRIMARY KEY (ticket_id, depends_on),
-      FOREIGN KEY (ticket_id) REFERENCES tickets(id),
-      FOREIGN KEY (depends_on) REFERENCES tickets(id)
+      ticket_id TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      depends_on_id TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      PRIMARY KEY (ticket_id, depends_on_id)
     );
 
     CREATE TABLE IF NOT EXISTS log_entries (
