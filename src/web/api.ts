@@ -86,6 +86,17 @@ export async function resetTicket(id: string): Promise<any> {
   return res.json();
 }
 
+export interface AgentLogEntry {
+  type: string;
+  text: string;
+  timestamp?: number;
+}
+
+export async function fetchAgentLog(id: string): Promise<{ entries: AgentLogEntry[] }> {
+  const res = await fetch(`${BASE}/tickets/${id}/agent-log`);
+  return res.json();
+}
+
 export async function fetchActiveAgents(): Promise<{ activeAgents: string[] }> {
   const res = await fetch(`${BASE}/tickets/active-agents`);
   return res.json();
@@ -103,5 +114,14 @@ export async function fetchProjects(): Promise<Project[]> {
 
 export async function fetchCurrentProject(): Promise<{ id: string }> {
   const res = await fetch(`${BASE}/project`);
+  return res.json();
+}
+
+export async function switchProject(id: string): Promise<{ id: string }> {
+  const res = await fetch(`${BASE}/project`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
   return res.json();
 }

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchTickets, fetchTicket, createTicket, runTicketAgent,
   qaAction, addComment, resetTicket, runAll, fetchActiveAgents,
-  fetchDagStructure, fetchProjects, fetchCurrentProject,
+  fetchDagStructure, fetchProjects, fetchCurrentProject, switchProject,
 } from '../api';
 
 export function useTickets() {
@@ -66,6 +66,19 @@ export function useAddComment() {
   return useMutation({
     mutationFn: ({ id, message }: { id: string; message: string }) => addComment(id, message),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
+  });
+}
+
+export function useSwitchProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: switchProject,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tickets'] });
+      qc.invalidateQueries({ queryKey: ['current-project'] });
+      qc.invalidateQueries({ queryKey: ['dag'] });
+      qc.invalidateQueries({ queryKey: ['active-agents'] });
+    },
   });
 }
 

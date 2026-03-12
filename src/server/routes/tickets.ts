@@ -11,7 +11,7 @@ import { detectCycle } from '../../core/dag.js';
 import { createQAChecklist, isQAComplete } from '../../core/qa.js';
 import { createWorktree, mergeToMain, removeWorktree } from '../../core/worktree.js';
 import { runAgent, createLogEntry, AgentResult } from '../../core/agent.js';
-import { getAllTrackedAgents, getTrackedAgent } from '../../core/process-tracker.js';
+import { getAllTrackedAgents, getTrackedAgent, readAgentLog } from '../../core/process-tracker.js';
 
 type Env = { Variables: { db: Database.Database } };
 
@@ -41,6 +41,42 @@ export function ticketRoutes(db: Database.Database, getProjectId: () => string, 
     const tracked = getAllTrackedAgents();
     const activeAgents = tracked.filter(a => a.alive).map(a => a.ticketId);
     return c.json({ activeAgents });
+  });
+
+  // Get agent log for a ticket (parsed stream-json)
+  app.get('/:id/agent-log', (c) => {
+    const id = c.req.param('id');
+    const raw = readAgentLog(id);
+    if (!raw) return c.json({ entries: [] });
+
+    const entries: Array<{ type: string; text: string; timestamp?: number }> = [];
+    const lines = raw.split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === 'assistant' && event.message?.content) {
+          for (const block of event.message.content) {
+            if (block.type === 'text') {
+              entries.push({ type: 'text', text: block.text });
+            } else if (block.type === 'tool_use') {
+              const name = block.name || 'tool';
+              const input = block.input ? JSON.stringify(block.input).substring(0, 500) : '';
+              entries.push({ type: 'tool_use', text: `${name}: ${input}` });
+            }
+          }
+        } else if (event.type === 'result') {
+          entries.push({
+            type: 'result',
+            text: `Completed. Cost: $${(event.cost_usd ?? event.costUsd)?.toFixed(4) ?? 'unknown'}`,
+          });
+        }
+      } catch {
+        // not valid JSON
+      }
+    }
+
+    return c.json({ entries });
   });
 
   // Get single ticket

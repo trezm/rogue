@@ -22,7 +22,7 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
-export function createServer(db: Database.Database, getProjectId: () => string) {
+export function createServer(db: Database.Database, getProjectId: () => string, setProjectId?: (id: string) => void) {
   const app = new Hono();
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app: app as any });
 
@@ -50,6 +50,17 @@ export function createServer(db: Database.Database, getProjectId: () => string) 
 
   app.get('/api/project', (c) => {
     return c.json({ id: getProjectId() });
+  });
+
+  app.post('/api/project', async (c) => {
+    const body = await c.req.json();
+    const { id } = body;
+    if (!id) return c.json({ error: 'Missing project id' }, 400);
+    const projects = getAllProjects(db);
+    if (!projects.find((p: any) => p.id === id)) return c.json({ error: 'Project not found' }, 404);
+    if (setProjectId) setProjectId(id);
+    broadcastEvent({ type: 'project-changed', data: { id } });
+    return c.json({ id });
   });
 
   // Health check
@@ -81,9 +92,10 @@ export function createServer(db: Database.Database, getProjectId: () => string) 
 export function startServer(
   db: Database.Database,
   getProjectId: () => string,
+  setProjectId?: (id: string) => void,
   port: number = 4242,
 ) {
-  const { app, injectWebSocket } = createServer(db, getProjectId);
+  const { app, injectWebSocket } = createServer(db, getProjectId, setProjectId);
 
   const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`Rogue server running at http://localhost:${info.port}`);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTickets, useRunAll, useActiveAgents, useProjects, useCurrentProject } from './hooks/useTickets';
+import { useTickets, useRunAll, useActiveAgents, useProjects, useCurrentProject, useSwitchProject } from './hooks/useTickets';
 import { useWebSocket } from './hooks/useWebSocket';
 import BoardView from './components/BoardView';
 import DagView from './components/DagView';
@@ -15,6 +15,7 @@ export default function App() {
   const { data: projects } = useProjects();
   const { data: currentProject } = useCurrentProject();
   const runAllMut = useRunAll();
+  const switchProject = useSwitchProject();
   const [activeTab, setActiveTab] = useState<ViewTab>('board');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -54,7 +55,7 @@ export default function App() {
               <select
                 className="appearance-none bg-surface border border-border rounded px-3 py-1.5 text-xs font-mono text-text-secondary cursor-pointer hover:border-border-bright focus:border-accent focus:outline-none pr-7"
                 value={currentProject?.id || ''}
-                disabled
+                onChange={(e) => switchProject.mutate(e.target.value)}
               >
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -136,7 +137,7 @@ export default function App() {
 
         {/* Detail panel */}
         {selectedTicket && (
-          <div className="w-[400px] border-l border-border bg-surface-raised overflow-y-auto flex-shrink-0">
+          <div className="w-[400px] border-l border-border bg-surface-raised flex-shrink-0 overflow-hidden">
             <TicketDetail
               ticket={selectedTicket}
               activeAgents={activeAgents}
