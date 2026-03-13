@@ -4,6 +4,7 @@ import { useWebSocket } from './hooks/useWebSocket';
 import BoardView from './components/BoardView';
 import DagView from './components/DagView';
 import TicketDetail from './components/TicketDetail';
+import CreateTicketModal from './components/CreateTicketModal';
 import type { Ticket } from './api';
 
 type ViewTab = 'board' | 'dag';
@@ -18,6 +19,7 @@ export default function App() {
   const switchProject = useSwitchProject();
   const [activeTab, setActiveTab] = useState<ViewTab>('board');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const activeAgents = new Set(activeAgentsData?.activeAgents || []);
   const selectedTicket = selectedId ? tickets?.find(t => t.id === selectedId) || null : null;
@@ -102,6 +104,13 @@ export default function App() {
           </div>
 
           <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-3.5 py-1.5 border border-border text-text-secondary text-xs font-mono rounded hover:bg-surface-hover hover:border-border-bright transition-colors tracking-wide"
+          >
+            + NEW TICKET
+          </button>
+
+          <button
             onClick={() => runAllMut.mutate()}
             disabled={runAllMut.isPending || stats.ready === 0}
             className="px-3.5 py-1.5 bg-accent text-white text-xs font-mono rounded hover:bg-accent-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors tracking-wide"
@@ -146,6 +155,8 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {showCreateModal && <CreateTicketModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }
