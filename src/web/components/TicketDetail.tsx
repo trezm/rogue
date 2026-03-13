@@ -26,16 +26,16 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
   const runAgent = useRunAgent();
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<DetailTab>('activity');
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const logTopRef = useRef<HTMLDivElement>(null);
 
   const isRunning = activeAgents.has(ticket.id);
   const stateColor = STATE_COLORS[ticket.state] || STATE_COLORS.blocked;
   const { entries: logEntries, liveLines } = useAgentLog(ticket.id, isRunning);
 
-  // Auto-scroll the log when new entries arrive
+  // Auto-scroll the log to top when new entries arrive (newest first)
   useEffect(() => {
-    if (activeTab === 'agent-log' && logEndRef.current) {
-      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (activeTab === 'agent-log' && logTopRef.current) {
+      logTopRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logEntries.length, liveLines.length, activeTab]);
 
@@ -176,18 +176,19 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
       {/* Comment input */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex gap-2">
-          <input
-            type="text"
+          <textarea
             value={comment}
             onChange={e => setComment(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && comment.trim()) {
+              if (e.key === 'Enter' && !e.shiftKey && comment.trim()) {
+                e.preventDefault();
                 addComment.mutate({ id: ticket.id, message: comment });
                 setComment('');
               }
             }}
-            placeholder="Add comment..."
-            className="flex-1 text-[12px] font-mono bg-surface border border-border rounded px-2.5 py-1.5 text-text-primary placeholder:text-text-muted focus:border-border-bright focus:outline-none"
+            placeholder="Add comment... (Shift+Enter for newline)"
+            rows={1}
+            className="flex-1 text-[12px] font-mono bg-surface border border-border rounded px-2.5 py-1.5 text-text-primary placeholder:text-text-muted focus:border-border-bright focus:outline-none resize-none"
           />
           <button
             onClick={() => {
@@ -196,7 +197,7 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
                 setComment('');
               }
             }}
-            className="text-[11px] font-mono px-3 py-1.5 rounded bg-surface-overlay border border-border text-text-secondary hover:bg-surface-hover transition-colors"
+            className="text-[11px] font-mono px-3 py-1.5 rounded bg-surface-overlay border border-border text-text-secondary hover:bg-surface-hover transition-colors self-end"
           >
             Send
           </button>
@@ -257,27 +258,27 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
         ) : (
           /* Agent log */
           <div className="space-y-0.5">
+            <div ref={logTopRef} />
             {logEntries.length === 0 && liveLines.length === 0 ? (
               <div className="text-text-muted font-mono text-[11px] py-8 text-center">
                 {isRunning ? 'Waiting for agent output...' : 'No agent log available'}
               </div>
             ) : (
               <>
-                {logEntries.map((entry, i) => (
-                  <AgentLogLine key={`e-${i}`} type={entry.type} text={entry.text} />
-                ))}
-                {liveLines.map((line, i) => (
+                {isRunning && (
+                  <div className="flex items-center gap-2 py-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-state-progress agent-running" />
+                    <span className="text-[10px] font-mono text-state-progress">Agent is working...</span>
+                  </div>
+                )}
+                {[...liveLines].reverse().map((line, i) => (
                   <AgentLogLine key={`l-${i}`} type="live" text={line} />
+                ))}
+                {[...logEntries].reverse().map((entry, i) => (
+                  <AgentLogLine key={`e-${i}`} type={entry.type} text={entry.text} />
                 ))}
               </>
             )}
-            {isRunning && (
-              <div className="flex items-center gap-2 py-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-state-progress agent-running" />
-                <span className="text-[10px] font-mono text-state-progress">Agent is working...</span>
-              </div>
-            )}
-            <div ref={logEndRef} />
           </div>
         )}
       </div>
