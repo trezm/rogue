@@ -126,7 +126,7 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
       </div>
 
       {/* Actions */}
-      <div className="px-4 py-3 border-b border-border flex gap-2 flex-wrap">
+      <div className="px-4 py-3 border-b border-border flex gap-2 flex-wrap items-center">
         {(ticket.state === 'ready' || ticket.state === 'in_progress') && !isRunning && (
           <button
             onClick={() => runAgent.mutate(ticket.id)}
@@ -147,17 +147,29 @@ export default function TicketDetail({ ticket, activeAgents, onClose }: Props) {
           <>
             <button
               onClick={() => qaAction.mutate({ id: ticket.id, action: { approveHuman: true } })}
-              className="flex items-center gap-1 text-[11px] font-mono px-3 py-1.5 rounded border border-state-complete/30 text-state-complete hover:bg-state-complete/10 transition-colors"
+              disabled={qaAction.isPending}
+              className="flex items-center gap-1 text-[11px] font-mono px-3 py-1.5 rounded border border-state-complete/30 text-state-complete hover:bg-state-complete/10 transition-colors disabled:opacity-50"
             >
-              ✓ Approve
+              {qaAction.isPending ? '...' : '✓ Approve'}
             </button>
             <button
               onClick={() => qaAction.mutate({ id: ticket.id, action: { reject: true, message: comment || 'Rejected' } })}
-              className="flex items-center gap-1 text-[11px] font-mono px-3 py-1.5 rounded border border-danger/30 text-danger hover:bg-danger/10 transition-colors"
+              disabled={qaAction.isPending}
+              className="flex items-center gap-1 text-[11px] font-mono px-3 py-1.5 rounded border border-danger/30 text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
             >
               ✕ Reject
             </button>
           </>
+        )}
+        {qaAction.isError && (
+          <div className="w-full text-[11px] font-mono text-danger mt-1">
+            {(qaAction.error as Error).message}
+          </div>
+        )}
+        {runAgent.isError && (
+          <div className="w-full text-[11px] font-mono text-danger mt-1">
+            {(runAgent.error as Error).message}
+          </div>
         )}
       </div>
 

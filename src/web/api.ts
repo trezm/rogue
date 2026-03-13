@@ -1,5 +1,13 @@
 const BASE = '/api';
 
+async function checkResponse(res: Response): Promise<Response> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed (${res.status})`);
+  }
+  return res;
+}
+
 export interface Ticket {
   id: string;
   projectId: string;
@@ -43,46 +51,46 @@ export async function createTicket(data: {
   id: string; title: string; description: string;
   dependencies?: string[]; qa?: string;
 }): Promise<Ticket> {
-  const res = await fetch(`${BASE}/tickets`, {
+  const res = await checkResponse(await fetch(`${BASE}/tickets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
+  }));
   return res.json();
 }
 
 export async function runTicketAgent(id: string): Promise<any> {
-  const res = await fetch(`${BASE}/tickets/${id}/run`, { method: 'POST' });
+  const res = await checkResponse(await fetch(`${BASE}/tickets/${id}/run`, { method: 'POST' }));
   return res.json();
 }
 
 export async function runAll(): Promise<any> {
-  const res = await fetch(`${BASE}/tickets/run-all`, { method: 'POST' });
+  const res = await checkResponse(await fetch(`${BASE}/tickets/run-all`, { method: 'POST' }));
   return res.json();
 }
 
 export async function qaAction(id: string, action: {
   approveAgent?: boolean; approveHuman?: boolean; reject?: boolean; message?: string;
 }): Promise<any> {
-  const res = await fetch(`${BASE}/tickets/${id}/qa`, {
+  const res = await checkResponse(await fetch(`${BASE}/tickets/${id}/qa`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(action),
-  });
+  }));
   return res.json();
 }
 
 export async function addComment(id: string, message: string): Promise<any> {
-  const res = await fetch(`${BASE}/tickets/${id}/comments`, {
+  const res = await checkResponse(await fetch(`${BASE}/tickets/${id}/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message }),
-  });
+  }));
   return res.json();
 }
 
 export async function resetTicket(id: string): Promise<any> {
-  const res = await fetch(`${BASE}/tickets/${id}/reset`, { method: 'POST' });
+  const res = await checkResponse(await fetch(`${BASE}/tickets/${id}/reset`, { method: 'POST' }));
   return res.json();
 }
 
