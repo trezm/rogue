@@ -297,6 +297,12 @@ export function ticketRoutes(db: Database.Database, getProjectId: () => string, 
     if (body.approveHuman) {
       updateTicketFields(db, id, { qaHumanApproved: true });
       addLogEntry(db, id, { timestamp: new Date().toISOString(), author: 'human', type: 'comment', content: 'Human review: approved' });
+
+      // Auto-approve agent review — if the ticket is in QA, the agent already completed its work
+      if (ticket.qa.requirements.includes(QARequirement.AGENT_REVIEW) && !ticket.qa.agentApproved) {
+        updateTicketFields(db, id, { qaAgentApproved: true });
+        addLogEntry(db, id, { timestamp: new Date().toISOString(), author: 'agent', type: 'comment', content: 'Agent review: auto-approved' });
+      }
     }
 
     ticket = getTicket(db, id)!;
