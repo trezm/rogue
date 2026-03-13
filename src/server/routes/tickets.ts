@@ -406,6 +406,19 @@ export function ticketRoutes(db: Database.Database, getProjectId: () => string, 
           type: 'state_change',
           content: `in_progress -> qa`,
         });
+
+        // Auto-approve agent review if required
+        const t = getTicket(db, id);
+        if (t && t.qa.requirements.includes(QARequirement.AGENT_REVIEW) && !t.qa.agentApproved) {
+          updateTicketFields(db, id, { qaAgentApproved: true });
+          addLogEntry(db, id, {
+            timestamp: new Date().toISOString(),
+            author: 'agent',
+            type: 'comment',
+            content: 'Agent review: auto-approved',
+          });
+        }
+
         cascadeReadyState(db);
       },
       onError: (error: Error) => {
